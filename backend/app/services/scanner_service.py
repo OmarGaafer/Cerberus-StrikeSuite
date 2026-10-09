@@ -1,33 +1,28 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from app.services.scanner_service import ScannerService
+import xml.etree.ElementTree as ET
 
-router = APIRouter()
-
-@router.post("/parse-report")
-async def parse_openvas_report_endpoint(file: UploadFile = File(...)):
-    """
-    مسار API لرفع تقرير OpenVAS XML وتحليله واستخراج الثغرات والمنافذ برمجياً.
-    """
-    if not file.filename.endswith(".xml"):
-        raise HTTPException(
-            status_code=400, 
-            detail="يجب رفع ملف تقرير بامتداد XML حصراً."
-        )
-    
-    try:
-        content = await file.read()
-        xml_text = content.decode("utf-8")
+class ScannerService:
+    @staticmethod
+    def parse_openvas_xml(xml_content: str) -> list[dict]:
+        """
+        Parses OpenVAS XML report content and extracts vulnerability findings.
+        """
+        vulnerabilities = []
+        root = ET.fromstring(xml_content)
         
-        # استدعاء دالة التحليل من ScannerService
-        vulnerabilities = ScannerService.parse_openvas_xml(xml_text)
-        
-        return {
-            "filename": file.filename,
-            "total_findings": len(vulnerabilities),
-            "vulnerabilities": vulnerabilities
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"حدث خطأ أثناء معالجة الملف: {str(e)}"
-        )
+        # Traverse results in OpenVAS XML format
+        for result in root.findall(".//result"):
+            name = result.findtext("name", "Unknown Vulnerability")
+            severity = result.findtext("severity", "0.0")
+            host = result.findtext("host", "Unknown")
+            port = result.findtext("port", "Unknown")
+            description = result.findtext("description", "")
+            
+            vulnerabilities.append({
+                "name": name,
+                "severity": float(severity) if severity else 0.0,
+                "host": host,
+                "port": port,
+                "description": description,
+            })
+            
+        return vulnerabilities
