@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     reports,
     risk_assessment,
     rules_of_engagement,
+    scanner,
     scope,
     users,
 )
@@ -128,6 +129,13 @@ api_v1_router.include_router(
     defense.router,
     prefix="/defense",
     tags=["Blue Team Defense"],
+)
+
+# ─── OpenVAS Scanner ─────────────────────────────────────────
+api_v1_router.include_router(
+    scanner.router,
+    prefix="/scanner",
+    tags=["OpenVAS Scanner"],
 )
 
 # ─── Admin ────────────────────────────────────────────────────
