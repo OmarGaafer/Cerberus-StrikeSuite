@@ -1,40 +1,68 @@
-import xml.etree.ElementTree as ET
-from gvm.protocols.gmp import Gmp
-from gvm.connections import UnixSocketConnection
+import subprocess
+import json
+import tempfile
+import os
 
 class ScannerService:
     @staticmethod
-    def parse_openvas_xml(xml_content: str) -> list[dict]:
-        vulnerabilities = []
-        root = ET.fromstring(xml_content)
-        
-        for result in root.findall(".//result"):
-            name = result.findtext("name", "Unknown Vulnerability")
-            severity = result.findtext("severity", "0.0")
-            host = result.findtext("host", "Unknown")
-            port = result.findtext("port", "Unknown")
-            description = result.findtext("description", "")
-            
-            vulnerabilities.append({
-                "name": name,
-                "severity": float(severity) if severity else 0.0,
-                "host": host,
-                "port": port,
-                "description": description,
-            })
-            
-        return vulnerabilities
+    def run_nuclei_scan(target_url: str) -> dict:
+        """
+        تقوم بتشغيل فحص أمني باستخدام Nuclei وتستخرج مخرجات منظمة وقوية للثغرات المكتشفة.
+        """
+        if not target_url.startswith("http"):
+            target_url = f"https://{target_url}"
 
-    @staticmethod
-    def start_live_scan(target_ip: str, profile: str = "full_and_fast") -> dict:
-        """
-        واجهة برمجية للربط مع بروتوكول GMP.
-        تتطلب وجود خادم gvmd متاح ومخصص داخل بيئة التشغيل.
-        """
-        # في حال عدم ربط خادم OpenVAS محلي، يمكن إرجاع هيكل بيانات تجريبي للعملية
-        return {
-            "status": "initiated",
-            "target": target_ip,
-            "profile": profile,
-            "info": "تم تسجيل طلب الفحص بنجاح في انتظار معالجة daemon الخادم"
+        results = {
+            "target": target_url,
+            "status": "success",
+            "total_vulnerabilities": 0,
+            "findings": []
         }
+
+        # استخدام ملف مؤقت لحفظ النتائج بصيغة JSON
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_output:
+            temp_output_path = temp_output.name
+
+        try:
+            # أمر تشغيل Nuclei وتوجيه المخرجات إلى ملف JSON
+            # ملاحظة: يتطلب وجود أداة nuclei مثبتة كأداة سطر قيادة خفيفة
+            command = ["nuclei", "-u", target_url, "-json", "-o", temp_output_path]
+            
+            # تنفيذ الأمر بمهلة زمنية لتجنب التعليق
+            process = subprocess.run(command, capture_output=True, text=True, timeout=30)
+            
+            if process.returncode != 0 and not os.path.exists(temp_output_path):
+                return {
+                    "target": target_url,
+                    "status": "error",
+                    "message": "فشل تنفيذ أداة الفحص. تأكد من تثبيت nuclei على الجهاز."
+                }
+
+            # قراءة النتائج المخرجة من ملف الـ JSON
+            if os.path.exists(temp_output_path):
+                with open(temp_output_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.strip():
+                            data = json.loads(line)
+                            results["findings"].append({
+                                "template_id": data.get("template-id", "Unknown"),
+                                "name": data.get("info", {}).get("name", "Vulnerability"),
+                                "severity": data.get("info", {}).get("severity", "info"),
+                                "matched_at": data.get("matched-at", target_url),
+                                "description": data.get("info", {}).get("description", "")
+                            })
+                
+                results["total_vulnerabilities"] = len(results["findings"])
+
+        except subprocess.TimeoutExpired:
+            results["status"] = "timeout"
+            results["message"] = "انتهت مهلة الفحص المسموحة."
+        except Exception as e:
+            results["status"] = "error"
+            results["message"] = str(e)
+        finally:
+            # تنظيف الملف المؤقت
+            if os.path.exists(temp_output_path):
+                os.remove(temp_output_path)
+
+        return results
