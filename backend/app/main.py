@@ -46,9 +46,9 @@ def create_application() -> FastAPI:
             "Cerberus AI — Intelligent Cybersecurity Platform. "
             "Automated penetration testing powered by AI."
         ),
-        docs_url="/docs" if settings.DEBUG else None,
-        redoc_url="/redoc" if settings.DEBUG else None,
-        openapi_url="/openapi.json" if settings.DEBUG else None,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
         default_response_class=ORJSONResponse,
         lifespan=lifespan,
     )
