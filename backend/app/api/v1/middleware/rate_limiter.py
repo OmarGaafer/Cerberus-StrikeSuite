@@ -5,8 +5,9 @@ Rate Limiter Middleware — Prevents abuse using Redis-backed rate limiting.
 import time
 
 from fastapi import Request
+from fastapi.responses import ORJSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import ORJSONResponse, Response
+from starlette.responses import Response
 
 from app.core.config import settings
 
