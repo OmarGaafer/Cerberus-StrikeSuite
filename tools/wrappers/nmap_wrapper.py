@@ -1,5 +1,18 @@
 """
 NmapWrapper - Full Nmap capability wrapper for Cerberus-StrikeSuite
+
+Covers every Nmap feature:
+- Host Discovery (ping, ARP, ICMP)
+- Port Scanning (SYN, Connect, ACK, FIN, NULL, Xmas, UDP, SCTP, IP, Idle)
+- Service & Version Detection
+- OS Detection
+- NSE Scripts (all 14 categories)
+- Firewall/IDS Evasion
+- Timing Control
+- Traceroute
+- Target Specification (CIDR, range, file)
+- Combined Scans (Aggressive, Intense, Stealth, Pentest)
+- Ndiff, Nping
 """
 import subprocess
 import xml.etree.ElementTree as ET
@@ -10,6 +23,10 @@ import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 
+
+# ============================================================
+# Data Classes
+# ============================================================
 
 @dataclass
 class PortResult:
@@ -53,12 +70,22 @@ class NmapResult:
     nmap_version: str = ""
 
 
+# ============================================================
+# Main Wrapper
+# ============================================================
+
 class NmapWrapper:
+    """Comprehensive Nmap wrapper covering every Nmap feature."""
+
     def __init__(self, binary_path: str = "nmap", default_timeout: int = 900):
         self.binary = binary_path
         self.default_timeout = default_timeout
 
+    # --------------------------------------------------------
+    # Core Execution
+    # --------------------------------------------------------
     def run(self, target: str, arguments: str = "-sV", timeout: Optional[int] = None) -> NmapResult:
+        """Run Nmap with arbitrary arguments."""
         timeout = timeout or self.default_timeout
         result = NmapResult(target=target, command=f"{self.binary} {arguments} {target}")
         tmp_xml = tempfile.NamedTemporaryFile(suffix=".xml", delete=False).name
@@ -95,14 +122,18 @@ class NmapWrapper:
                     pass
         return result
 
-    # ---------- Host Discovery ----------
+    # --------------------------------------------------------
+    # 1. Host Discovery
+    # --------------------------------------------------------
     def host_discovery(self, target): return self.run(target, "-sn")
     def ping_sweep(self, target): return self.run(target, "-sn -PE -PS443 -PA80 -PP")
     def arp_scan(self, target): return self.run(target, "-sn -PR")
     def list_scan(self, target): return self.run(target, "-sL")
     def no_ping_scan(self, target): return self.run(target, "-Pn")
 
-    # ---------- Port Scanning ----------
+    # --------------------------------------------------------
+    # 2. Port Scanning
+    # --------------------------------------------------------
     def scan_tcp_syn(self, target, ports="1-1000"): return self.run(target, f"-sS -p {ports}")
     def scan_tcp_connect(self, target, ports="1-1000"): return self.run(target, f"-sT -p {ports}")
     def scan_tcp_ack(self, target, ports="1-1000"): return self.run(target, f"-sA -p {ports}")
@@ -119,20 +150,26 @@ class NmapWrapper:
     def scan_fast(self, target): return self.run(target, "-F")
     def scan_specific_ports(self, target, ports): return self.run(target, f"-p {ports}")
 
-    # ---------- Service Detection ----------
+    # --------------------------------------------------------
+    # 3. Service Detection
+    # --------------------------------------------------------
     def service_detection(self, target, ports="1-1000", intensity=7):
         return self.run(target, f"-sV --version-intensity {intensity} -p {ports}")
     def service_light(self, target): return self.run(target, "-sV --version-light")
     def service_all(self, target): return self.run(target, "-sV --version-all", timeout=3600)
 
-    # ---------- OS Detection ----------
+    # --------------------------------------------------------
+    # 4. OS Detection
+    # --------------------------------------------------------
     def os_detection(self, target, guess=True):
         args = "-O"
         if guess: args += " --osscan-guess"
         return self.run(target, args)
     def os_detection_limit(self, target): return self.run(target, "-O --osscan-limit")
 
-    # ---------- NSE Scripts ----------
+    # --------------------------------------------------------
+    # 5. NSE Scripts
+    # --------------------------------------------------------
     def script_default(self, target, ports=""):
         args = "-sC"
         if ports: args += f" -p {ports}"
@@ -169,7 +206,9 @@ class NmapWrapper:
     def script_vulners(self, target, ports="1-1000"):
         return self.run(target, f"-sV -p {ports} --script vulners", timeout=1800)
 
-    # ---------- Firewall Evasion ----------
+    # --------------------------------------------------------
+    # 6. Firewall Evasion
+    # --------------------------------------------------------
     def fragment_packets(self, target, mtu=8): return self.run(target, f"-f --mtu {mtu}")
     def decoy_scan(self, target, decoys="RND:10"): return self.run(target, f"-D {decoys}")
     def spoof_source(self, target, spoof_ip): return self.run(target, f"-S {spoof_ip}")
@@ -179,15 +218,21 @@ class NmapWrapper:
     def data_length(self, target, length=32): return self.run(target, f"--data-length {length}")
     def source_port(self, target, port=53): return self.run(target, f"--source-port {port}")
 
-    # ---------- Timing ----------
+    # --------------------------------------------------------
+    # 7. Timing
+    # --------------------------------------------------------
     def timed_scan(self, target, timing, ports="1-1000"):
         return self.run(target, f"{timing} -p {ports}")
 
-    # ---------- Traceroute ----------
+    # --------------------------------------------------------
+    # 8. Traceroute
+    # --------------------------------------------------------
     def traceroute(self, target, ports="80,443"):
         return self.run(target, f"--traceroute -p {ports}")
 
-    # ---------- Target Specification ----------
+    # --------------------------------------------------------
+    # 9. Target Specification
+    # --------------------------------------------------------
     def scan_cidr(self, cidr): return self.run(cidr, "-sV")
     def scan_range(self, start_ip, end_ip): return self.run(f"{start_ip}-{end_ip}", "-sV")
     def scan_from_file(self, file_path): return self.run(f"-iL {file_path}", "-sV")
@@ -195,7 +240,9 @@ class NmapWrapper:
     def scan_exclude_file(self, target, exclude_file):
         return self.run(target, f"--excludefile {exclude_file}")
 
-    # ---------- Combined Scans ----------
+    # --------------------------------------------------------
+    # 10. Combined Scans
+    # --------------------------------------------------------
     def aggressive_scan(self, target): return self.run(target, "-A", timeout=3600)
     def intense_scan(self, target):
         return self.run(target, "-sS -sV -O -p- -T4 --script default,vuln", timeout=7200)
@@ -206,13 +253,16 @@ class NmapWrapper:
     def pentest_scan(self, target):
         return self.run(target, "-sS -sV -O -p- -T4 --script default,discovery,safe,vuln,auth --version-all --traceroute", timeout=10800)
 
-    # ---------- External tools ----------
+    # --------------------------------------------------------
+    # 11. External Tools
+    # --------------------------------------------------------
     def ndiff(self, file1, file2):
         try:
             proc = subprocess.run(["ndiff", file1, file2], capture_output=True, text=True, timeout=60)
             return proc.stdout
         except Exception as e:
             return f"ndiff error: {e}"
+
     def nping(self, target, count=4, protocol="tcp"):
         try:
             proc = subprocess.run(["nping", f"--{protocol}", "-c", str(count), target],
@@ -223,7 +273,9 @@ class NmapWrapper:
         except Exception as e:
             return NmapResult(target=target, command="nping", error=str(e))
 
-    # ---------- XML Parser ----------
+    # --------------------------------------------------------
+    # 12. XML Parser
+    # --------------------------------------------------------
     def _parse_xml(self, xml_content, result):
         hosts = []
         try:
