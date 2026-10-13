@@ -1,3 +1,4 @@
+"""REST API endpoints for Nmap scanning."""
 from fastapi import APIRouter, HTTPException, status
 import uuid
 import sys
@@ -25,8 +26,10 @@ async def start_nmap_scan(req: ScanRequest):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Rules of Engagement must be acknowledged",
         )
+
     scan_id = str(uuid.uuid4())
     w = NmapWrapper()
+
     dispatch = {
         ScanType.HOST_DISCOVERY: lambda: w.host_discovery(req.target),
         ScanType.PING_SWEEP: lambda: w.ping_sweep(req.target),
@@ -42,49 +45,4 @@ async def start_nmap_scan(req: ScanRequest):
         ScanType.IP_PROTOCOL: lambda: w.scan_ip_protocol(req.target),
         ScanType.SERVICE: lambda: w.service_detection(req.target, req.ports or "1-1000"),
         ScanType.OS: lambda: w.os_detection(req.target),
-        ScanType.SCRIPT_VULN: lambda: w.script_vuln(req.target, req.ports or ""),
-        ScanType.SCRIPT_AUTH: lambda: w.script_auth(req.target, req.ports or ""),
-        ScanType.SCRIPT_BRUTE: lambda: w.script_brute(req.target, req.ports or ""),
-        ScanType.SCRIPT_DISCOVERY: lambda: w.script_discovery(req.target, req.ports or ""),
-        ScanType.SCRIPT_EXPLOIT: lambda: w.script_exploit(req.target, req.ports or ""),
-        ScanType.QUICK: lambda: w.scan_fast(req.target),
-        ScanType.FULL: lambda: w.scan_all_ports(req.target),
-        ScanType.AGGRESSIVE: lambda: w.aggressive_scan(req.target),
-        ScanType.INTENSE: lambda: w.intense_scan(req.target),
-        ScanType.COMPREHENSIVE: lambda: w.comprehensive_scan(req.target),
-        ScanType.STEALTH: lambda: w.stealth_scan(req.target, req.ports or "1-1000"),
-        ScanType.PENTEST: lambda: w.pentest_scan(req.target),
-        ScanType.TRACEROUTE: lambda: w.traceroute(req.target, req.ports or "80,443"),
-        ScanType.CUSTOM: lambda: w.run(req.target, req.custom_args or "-sV"),
-    }
-    fn = dispatch.get(req.scan_type)
-    if fn is None:
-        raise HTTPException(400, f"Unsupported scan type: {req.scan_type}")
-    result = fn()
-    return {
-        "scan_id": scan_id,
-        "status": "completed" if result.success else "failed",
-        "target": req.target,
-        "command": result.command,
-        "elapsed": result.elapsed,
-        "nmap_version": result.nmap_version,
-        "hosts_count": len(result.hosts),
-        "error": result.error,
-        "hosts": [
-            {
-                "ip": h.ip, "mac": h.mac, "vendor": h.vendor,
-                "hostname": h.hostname, "state": h.state,
-                "os_matches": h.os_matches,
-                "ports": [
-                    {"port": p.port, "protocol": p.protocol, "state": p.state,
-                     "reason": p.reason, "service": p.service, "product": p.product,
-                     "version": p.version, "extrainfo": p.extrainfo,
-                     "cpe": p.cpe, "scripts": p.scripts}
-                    for p in h.ports
-                ],
-                "host_scripts": h.host_scripts,
-                "traceroute": h.traceroute,
-            }
-            for h in result.hosts
-        ],
-    }
+        ScanType.SCRIPT_VULN: lambda: w.script_vuln(req.target, req.ports or ""
