@@ -9,25 +9,51 @@ Full Nmap capability integration for Cerberus-StrikeSuite.
 | `tools/wrappers/nmap_wrapper.py` | 50+ methods covering every Nmap feature |
 | `tools/wrappers/__init__.py` | Package exports |
 | `backend/app/schemas/scan.py` | Pydantic schemas |
-| `backend/app/tasks/scan_tasks.py` | Celery async task |
+| `backend/app/db/session.py` | Async + sync DB sessions |
+| `backend/app/db/models/scan.py` | Scan, ScanHost, ScanPort models |
+| `backend/app/db/repositories/scan_repo.py` | Scan CRUD |
+| `backend/app/tasks/scan_tasks.py` | Celery task |
 | `backend/app/api/v1/endpoints/scanning.py` | REST API |
-| `backend/tests/unit/test_nmap_wrapper.py` | Unit tests |
-| `backend/tests/integration/test_api_scanning.py` | Integration tests |
 
-## Supported Features
+## Supported Nmap Features
 
-- Host Discovery: ping, ARP, ICMP, list, no-ping
-- Port Scanning: TCP SYN/Connect/ACK/FIN/NULL/Xmas, UDP, SCTP, IP, Idle
-- Port Selection: all, top, fast, specific
-- Service Detection: light, standard, all
-- OS Detection: standard, limit
-- NSE Scripts: default, vuln, auth, brute, discovery, exploit, safe, vulners, http/smb/ssh/ssl/dns enum
-- Firewall Evasion: fragment, decoy, spoof source/MAC, bad checksum, data length, source port
-- Timing: T0-T5
-- Traceroute
-- Target Spec: CIDR, range, file, exclude
-- Combined: aggressive, intense, comprehensive, stealth, pentest
-- External: ndiff, nping
+### Host Discovery
+- `host_discovery` — Ping scan
+- `ping_sweep` — ICMP + TCP + UDP
+- `arp_scan` — ARP scan (LAN)
+
+### Port Scanning
+- `tcp_syn` — SYN stealth (root)
+- `tcp_connect` — Connect
+- `tcp_ack` — ACK scan (root)
+- `tcp_fin`, `tcp_null`, `tcp_xmas` — Stealth variants (root)
+- `udp` — UDP scan (root, slow)
+- `sctp_init` — SCTP scan
+- `ip_protocol` — IP protocol scan
+- `full` — All 65535 ports
+- `quick` — Fast top 100
+
+### Service & OS
+- `service` — Version detection
+- `os` — OS fingerprinting (root)
+
+### NSE Scripts
+- `script_vuln` — Vulnerability scripts
+- `script_auth` — Auth scripts
+- `script_brute` — Brute force scripts
+- `script_discovery` — Discovery scripts
+- `script_exploit` — Exploit scripts
+
+### Combined
+- `aggressive` — `-A` (all-in-one)
+- `intense` — Deep scan
+- `comprehensive` — TCP + UDP + scripts
+- `stealth` — Slow + evasion
+- `pentest` — Full pentest workflow
+
+### Other
+- `traceroute` — Network path
+- `custom` — Arbitrary Nmap args
 
 ## Setup
 
