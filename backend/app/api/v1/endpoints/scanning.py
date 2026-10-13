@@ -20,13 +20,11 @@ router = APIRouter(prefix="/scanning", tags=["Scanning"])
 
 @router.get("/types/available")
 async def list_scan_types():
-    """List all supported scan types."""
     return [s.value for s in ScanType]
 
 
 @router.post("/nmap")
 async def start_nmap_scan(req: ScanRequest, db=Depends(get_db)):
-    """Start an Nmap scan synchronously and store results."""
     if not req.roe_acknowledged:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,7 +33,6 @@ async def start_nmap_scan(req: ScanRequest, db=Depends(get_db)):
 
     scan_id = str(uuid.uuid4())
 
-    # Create initial DB record (best-effort)
     try:
         ScanRepository.create(db, scan_id, req.target, req.scan_type.value)
     except Exception:
@@ -80,7 +77,6 @@ async def start_nmap_scan(req: ScanRequest, db=Depends(get_db)):
 
     result = fn()
 
-    # Persist full results
     try:
         ScanRepository.complete(db, scan_id, result)
     except Exception:
@@ -117,7 +113,6 @@ async def start_nmap_scan(req: ScanRequest, db=Depends(get_db)):
 
 @router.get("/")
 async def list_scans(limit: int = 50, db=Depends(get_db)):
-    """List recent scans."""
     scans = ScanRepository.list_recent(db, limit)
     return [
         {
@@ -133,7 +128,6 @@ async def list_scans(limit: int = 50, db=Depends(get_db)):
 
 @router.get("/{scan_id}")
 async def get_scan(scan_id: str, db=Depends(get_db)):
-    """Get scan results by ID."""
     scan = ScanRepository.get(db, scan_id)
     if not scan:
         raise HTTPException(404, "Scan not found")
