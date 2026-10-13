@@ -20,7 +20,6 @@ class ScanRepository:
         engagement_id: Optional[UUID] = None,
         created_by: Optional[UUID] = None,
     ) -> Scan:
-        """Create a new scan record with status='running'."""
         scan = Scan(
             id=scan_id,
             target=target,
@@ -37,10 +36,6 @@ class ScanRepository:
 
     @staticmethod
     def complete(db: Session, scan_id: str, result) -> Optional[Scan]:
-        """
-        Persist a completed NmapResult into the DB.
-        Creates ScanHost and ScanPort rows for each host/port.
-        """
         scan = db.query(Scan).filter(Scan.id == scan_id).first()
         if not scan:
             return None
@@ -84,38 +79,3 @@ class ScanRepository:
                     cpe=p.cpe,
                     scripts=p.scripts,
                 )
-                db.add(port)
-
-        db.commit()
-        db.refresh(scan)
-        return scan
-
-    @staticmethod
-    def get(db: Session, scan_id: str) -> Optional[Scan]:
-        """Fetch a single scan by ID."""
-        return db.query(Scan).filter(Scan.id == scan_id).first()
-
-    @staticmethod
-    def list_by_engagement(db: Session, engagement_id: UUID) -> List[Scan]:
-        """List all scans belonging to an engagement, newest first."""
-        return (
-            db.query(Scan)
-            .filter(Scan.engagement_id == engagement_id)
-            .order_by(Scan.created_at.desc())
-            .all()
-        )
-
-    @staticmethod
-    def list_recent(db: Session, limit: int = 50) -> List[Scan]:
-        """List the most recent scans (default limit: 50)."""
-        return db.query(Scan).order_by(Scan.created_at.desc()).limit(limit).all()
-
-    @staticmethod
-    def delete(db: Session, scan_id: str) -> bool:
-        """Delete a scan by ID. Returns True if deleted, False if not found."""
-        scan = db.query(Scan).filter(Scan.id == scan_id).first()
-        if not scan:
-            return False
-        db.delete(scan)
-        db.commit()
-        return True
