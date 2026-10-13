@@ -1,3 +1,4 @@
+"""Unit tests for NmapWrapper."""
 import pytest
 from tools.wrappers.nmap_wrapper import NmapWrapper
 
@@ -24,4 +25,9 @@ def test_scan_fast(wrapper):
 
 def test_scan_specific_ports(wrapper):
     r = wrapper.scan_specific_ports("scanme.nmap.org", "22,80")
+    assert r.success is True
+
+
+def test_service_detection(wrapper):
+    r = wrapper.service_detection("scanme.nmap.org", "22,80")
     assert r.success is True
