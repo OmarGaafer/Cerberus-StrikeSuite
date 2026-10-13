@@ -27,127 +27,21 @@ from app.api.v1.endpoints import (
 
 api_v1_router = APIRouter()
 
-# ─── Authentication & Registration ────────────────────────────
-api_v1_router.include_router(
-    auth.router,
-    prefix="/auth",
-    tags=["Authentication"],
-)
-
-# ─── User Profile ─────────────────────────────────────────────
-api_v1_router.include_router(
-    users.router,
-    prefix="/users",
-    tags=["Users"],
-)
-
-# ─── Engagements ──────────────────────────────────────────────
-api_v1_router.include_router(
-    engagements.router,
-    prefix="/engagements",
-    tags=["Engagements"],
-)
-
-# ─── AI Conversation ──────────────────────────────────────────
-api_v1_router.include_router(
-    ai_conversation.router,
-    prefix="/ai",
-    tags=["AI Conversation"],
-)
-
-# ─── Scope of Engagement ─────────────────────────────────────
-api_v1_router.include_router(
-    scope.router,
-    prefix="/scope",
-    tags=["Scope of Engagement"],
-)
-
-# ─── Rules of Engagement ─────────────────────────────────────
-api_v1_router.include_router(
-    rules_of_engagement.router,
-    prefix="/rules",
-    tags=["Rules of Engagement"],
-)
-
-# ─── Document Upload ──────────────────────────────────────────
-api_v1_router.include_router(
-    documents.router,
-    prefix="/documents",
-    tags=["Documents"],
-)
-
-# ─── OSINT Phase ──────────────────────────────────────────────
-api_v1_router.include_router(
-    osint.router,
-    prefix="/osint",
-    tags=["OSINT"],
-)
-
-# ─── Attack Planning ──────────────────────────────────────────
-api_v1_router.include_router(
-    attack_planning.router,
-    prefix="/attack-planning",
-    tags=["Attack Planning"],
-)
-
-# ─── Red Team Execution ──────────────────────────────────────
-api_v1_router.include_router(
-    red_team.router,
-    prefix="/red-team",
-    tags=["Red Team"],
-)
-
-# ─── Risk Assessment ──────────────────────────────────────────
-api_v1_router.include_router(
-    risk_assessment.router,
-    prefix="/risk-assessment",
-    tags=["Risk Assessment"],
-)
-
-# ─── Reports ──────────────────────────────────────────────────
-api_v1_router.include_router(
-    reports.router,
-    prefix="/reports",
-    tags=["Reports"],
-)
-
-# ─── Dashboard ────────────────────────────────────────────────
-api_v1_router.include_router(
-    dashboard.router,
-    prefix="/dashboard",
-    tags=["Dashboard"],
-)
-
-# ─── Notifications ────────────────────────────────────────────
-api_v1_router.include_router(
-    notifications.router,
-    prefix="/notifications",
-    tags=["Notifications"],
-)
-
-# ─── Blue Team Defense ───────────────────────────────────────
-api_v1_router.include_router(
-    defense.router,
-    prefix="/defense",
-    tags=["Blue Team Defense"],
-)
-
-# ─── OpenVAS Scanner ─────────────────────────────────────────
-api_v1_router.include_router(
-    scanner.router,
-    prefix="/scanner",
-    tags=["OpenVAS Scanner"],
-)
-
-# ─── Nmap Scanner ────────────────────────────────────────────
-api_v1_router.include_router(
-    scanning.router,
-    tags=["Nmap Scanner"],
-)
-
-# ─── Admin ────────────────────────────────────────────────────
-api_v1_router.include_router(
-    admin.router,
-    prefix="/admin",
-    tags=["Admin"],
-)
+api_v1_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_v1_router.include_router(users.router, prefix="/users", tags=["Users"])
+api_v1_router.include_router(engagements.router, prefix="/engagements", tags=["Engagements"])
+api_v1_router.include_router(ai_conversation.router, prefix="/ai", tags=["AI Conversation"])
+api_v1_router.include_router(scope.router, prefix="/scope", tags=["Scope of Engagement"])
+api_v1_router.include_router(rules_of_engagement.router, prefix="/rules", tags=["Rules of Engagement"])
+api_v1_router.include_router(documents.router, prefix="/documents", tags=["Documents"])
+api_v1_router.include_router(osint.router, prefix="/osint", tags=["OSINT"])
+api_v1_router.include_router(attack_planning.router, prefix="/attack-planning", tags=["Attack Planning"])
+api_v1_router.include_router(red_team.router, prefix="/red-team", tags=["Red Team"])
+api_v1_router.include_router(risk_assessment.router, prefix="/risk-assessment", tags=["Risk Assessment"])
+api_v1_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
+api_v1_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+api_v1_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+api_v1_router.include_router(defense.router, prefix="/defense", tags=["Blue Team Defense"])
+api_v1_router.include_router(scanner.router, prefix="/scanner", tags=["OpenVAS Scanner"])
+api_v1_router.include_router(scanning.router, tags=["Nmap Scanner"])
+api_v1_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
