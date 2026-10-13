@@ -1,5 +1,6 @@
 """REST API endpoints for Nmap scanning."""
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from typing import Optional
 import uuid
 import sys
 import os
@@ -8,7 +9,9 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-from app.schemas.scan import ScanRequest, ScanType
+from app.schemas.scan import ScanRequest, ScanType, ScanResponse
+from app.db.session import get_db
+from app.db.repositories.scan_repo import ScanRepository
 from tools.wrappers.nmap_wrapper import NmapWrapper
 
 router = APIRouter(prefix="/scanning", tags=["Scanning"])
@@ -16,11 +19,13 @@ router = APIRouter(prefix="/scanning", tags=["Scanning"])
 
 @router.get("/types/available")
 async def list_scan_types():
+    """List all supported scan types."""
     return [s.value for s in ScanType]
 
 
 @router.post("/nmap")
-async def start_nmap_scan(req: ScanRequest):
+async def start_nmap_scan(req: ScanRequest, db=Depends(get_db)):
+    """Start an Nmap scan synchronously and store results."""
     if not req.roe_acknowledged:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -28,6 +33,13 @@ async def start_nmap_scan(req: ScanRequest):
         )
 
     scan_id = str(uuid.uuid4())
+
+    # Create initial DB record
+    try:
+        ScanRepository.create(db, scan_id, req.target, req.scan_type.value)
+    except Exception:
+        pass  # DB optional for MVP
+
     w = NmapWrapper()
 
     dispatch = {
@@ -67,6 +79,12 @@ async def start_nmap_scan(req: ScanRequest):
 
     result = fn()
 
+    # Save results
+    try:
+        ScanRepository.complete(db, scan_id, result)
+    except Exception:
+        pass
+
     return {
         "scan_id": scan_id,
         "status": "completed" if result.success else "failed",
@@ -94,3 +112,36 @@ async def start_nmap_scan(req: ScanRequest):
             for h in result.hosts
         ],
     }
+
+
+@router.get("/{scan_id}")
+async def get_scan(scan_id: str, db=Depends(get_db)):
+    """Get scan results by ID."""
+    scan = ScanRepository.get(db, scan_id)
+    if not scan:
+        raise HTTPException(404, "Scan not found")
+    return {
+        "scan_id": str(scan.id),
+        "target": scan.target,
+        "scan_type": scan.scan_type,
+        "status": scan.status,
+        "success": scan.success,
+        "elapsed": scan.elapsed,
+        "hosts_count": len(scan.hosts),
+    }
+
+
+@router.get("/")
+async def list_scans(limit: int = 50, db=Depends(get_db)):
+    """List recent scans."""
+    scans = ScanRepository.list_recent(db, limit)
+    return [
+        {
+            "scan_id": str(s.id),
+            "target": s.target,
+            "scan_type": s.scan_type,
+            "status": s.status,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in scans
+    ]
