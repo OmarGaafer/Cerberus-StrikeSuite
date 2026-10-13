@@ -20,6 +20,7 @@ from app.api.v1.endpoints import (
     risk_assessment,
     rules_of_engagement,
     scanner,
+    scanning,
     scope,
     users,
 )
@@ -136,6 +137,12 @@ api_v1_router.include_router(
     scanner.router,
     prefix="/scanner",
     tags=["OpenVAS Scanner"],
+)
+
+# ─── Nmap Scanner ────────────────────────────────────────────
+api_v1_router.include_router(
+    scanning.router,
+    tags=["Nmap Scanner"],
 )
 
 # ─── Admin ────────────────────────────────────────────────────
