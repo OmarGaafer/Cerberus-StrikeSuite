@@ -1,17 +1,26 @@
-"""Repository for Scan-related DB operations."""
+"""Repository for Scan-related DB operations (sync)."""
 from typing import Optional, List
 from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.db.models.scan import Scan, ScanHost, ScanPort
 
 
 class ScanRepository:
-    """CRUD operations for scans."""
+    """CRUD operations for Nmap scans."""
 
     @staticmethod
-    def create(db: Session, scan_id: str, target: str, scan_type: str, command: str = "",
-               engagement_id: Optional[UUID] = None, created_by: Optional[UUID] = None) -> Scan:
+    def create(
+        db: Session,
+        scan_id: str,
+        target: str,
+        scan_type: str,
+        command: str = "",
+        engagement_id: Optional[UUID] = None,
+        created_by: Optional[UUID] = None,
+    ) -> Scan:
+        """Create a new scan record with status='running'."""
         scan = Scan(
             id=scan_id,
             target=target,
@@ -28,6 +37,10 @@ class ScanRepository:
 
     @staticmethod
     def complete(db: Session, scan_id: str, result) -> Optional[Scan]:
+        """
+        Persist a completed NmapResult into the DB.
+        Creates ScanHost and ScanPort rows for each host/port.
+        """
         scan = db.query(Scan).filter(Scan.id == scan_id).first()
         if not scan:
             return None
@@ -79,12 +92,30 @@ class ScanRepository:
 
     @staticmethod
     def get(db: Session, scan_id: str) -> Optional[Scan]:
+        """Fetch a single scan by ID."""
         return db.query(Scan).filter(Scan.id == scan_id).first()
 
     @staticmethod
     def list_by_engagement(db: Session, engagement_id: UUID) -> List[Scan]:
-        return db.query(Scan).filter(Scan.engagement_id == engagement_id).all()
+        """List all scans belonging to an engagement, newest first."""
+        return (
+            db.query(Scan)
+            .filter(Scan.engagement_id == engagement_id)
+            .order_by(Scan.created_at.desc())
+            .all()
+        )
 
     @staticmethod
     def list_recent(db: Session, limit: int = 50) -> List[Scan]:
+        """List the most recent scans (default limit: 50)."""
         return db.query(Scan).order_by(Scan.created_at.desc()).limit(limit).all()
+
+    @staticmethod
+    def delete(db: Session, scan_id: str) -> bool:
+        """Delete a scan by ID. Returns True if deleted, False if not found."""
+        scan = db.query(Scan).filter(Scan.id == scan_id).first()
+        if not scan:
+            return False
+        db.delete(scan)
+        db.commit()
+        return True
