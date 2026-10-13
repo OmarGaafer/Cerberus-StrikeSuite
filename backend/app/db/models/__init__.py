@@ -12,6 +12,7 @@ from app.db.models.otp import OTPVerification
 from app.db.models.report import Report
 from app.db.models.risk_assessment import RiskAssessment
 from app.db.models.rules_of_engagement import RulesOfEngagement
+from app.db.models.scan import Scan, ScanHost, ScanPort
 from app.db.models.scope import ScopeAsset, ScopeOfEngagement
 from app.db.models.session import UserSession
 from app.db.models.uploaded_document import UploadedDocument
@@ -32,6 +33,9 @@ __all__ = [
     "Report",
     "RiskAssessment",
     "RulesOfEngagement",
+    "Scan",
+    "ScanHost",
+    "ScanPort",
     "ScopeAsset",
     "ScopeOfEngagement",
     "UploadedDocument",
