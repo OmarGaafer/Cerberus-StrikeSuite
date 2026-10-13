@@ -55,12 +55,7 @@ def _dispatch_scan(w, target, scan_type, ports, custom_args, timing, scripts, sc
 
 
 def _persist_results(scan_id, result):
-    """
-    Persist scan results to the database.
-
-    If the DB session or repository is unavailable, log a warning
-    and return gracefully so the Celery task does not fail.
-    """
+    """Persist scan results to the database (best effort)."""
     try:
         from app.db.session import SessionLocal
         from app.db.repositories.scan_repo import ScanRepository
@@ -77,7 +72,6 @@ def _persist_results(scan_id, result):
         logger.error(f"[scan_tasks] DB persist failed for {scan_id}: {e}", exc_info=True)
 
 
-# ─── Celery task registration ────────────────────────────────
 try:
     from celery import shared_task
 
@@ -104,7 +98,6 @@ try:
                 custom_args, timing, scripts, script_args, exclude,
             )
             _persist_results(scan_id, result)
-
             return {
                 "scan_id": scan_id,
                 "success": result.success,
@@ -120,8 +113,6 @@ try:
             raise self.retry(exc=e)
 
 except ImportError:
-    # Celery not installed — provide a synchronous fallback.
-    # Useful for tests and local dev without a broker.
     def run_nmap_scan(
         scan_id: str,
         target: str,
@@ -142,7 +133,6 @@ except ImportError:
             custom_args, timing, scripts, script_args, exclude,
         )
         _persist_results(scan_id, result)
-
         return {
             "scan_id": scan_id,
             "success": result.success,
