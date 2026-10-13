@@ -20,7 +20,6 @@ from app.db.session import Base
 
 
 class Scan(Base):
-    """Represents a single Nmap scan."""
     __tablename__ = "scans"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -52,16 +51,10 @@ class Scan(Base):
 
     hosts = relationship("ScanHost", back_populates="scan", cascade="all, delete-orphan")
 
-    __table_args__ = (
-        Index("ix_scans_target_type", "target", "scan_type"),
-    )
-
-    def __repr__(self):
-        return f"<Scan(id={self.id}, target={self.target}, type={self.scan_type})>"
+    __table_args__ = (Index("ix_scans_target_type", "target", "scan_type"),)
 
 
 class ScanHost(Base):
-    """A host discovered during a scan."""
     __tablename__ = "scan_hosts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -85,12 +78,8 @@ class ScanHost(Base):
     scan = relationship("Scan", back_populates="hosts")
     ports = relationship("ScanPort", back_populates="host", cascade="all, delete-orphan")
 
-    def __repr__(self):
-        return f"<ScanHost(ip={self.ip}, state={self.state})>"
-
 
 class ScanPort(Base):
-    """A port discovered on a host."""
     __tablename__ = "scan_ports"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -112,6 +101,3 @@ class ScanPort(Base):
     scripts = Column(JSON, default=dict)
 
     host = relationship("ScanHost", back_populates="ports")
-
-    def __repr__(self):
-        return f"<ScanPort({self.port}/{self.protocol} {self.state})>"
