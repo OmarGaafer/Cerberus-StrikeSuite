@@ -79,3 +79,34 @@ class ScanRepository:
                     cpe=p.cpe,
                     scripts=p.scripts,
                 )
+                db.add(port)
+
+        db.commit()
+        db.refresh(scan)
+        return scan
+
+    @staticmethod
+    def get(db: Session, scan_id: str) -> Optional[Scan]:
+        return db.query(Scan).filter(Scan.id == scan_id).first()
+
+    @staticmethod
+    def list_by_engagement(db: Session, engagement_id: UUID) -> List[Scan]:
+        return (
+            db.query(Scan)
+            .filter(Scan.engagement_id == engagement_id)
+            .order_by(Scan.created_at.desc())
+            .all()
+        )
+
+    @staticmethod
+    def list_recent(db: Session, limit: int = 50) -> List[Scan]:
+        return db.query(Scan).order_by(Scan.created_at.desc()).limit(limit).all()
+
+    @staticmethod
+    def delete(db: Session, scan_id: str) -> bool:
+        scan = db.query(Scan).filter(Scan.id == scan_id).first()
+        if not scan:
+            return False
+        db.delete(scan)
+        db.commit()
+        return True
