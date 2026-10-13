@@ -1,3 +1,4 @@
+"""Integration tests for scanning API."""
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,7 +12,10 @@ def client():
 def test_list_scan_types(client):
     r = client.get("/api/v1/scanning/types/available")
     assert r.status_code == 200
-    assert "quick" in r.json()
+    data = r.json()
+    assert "quick" in data
+    assert "service" in data
+    assert "host_discovery" in data
 
 
 def test_scan_requires_roe(client):
