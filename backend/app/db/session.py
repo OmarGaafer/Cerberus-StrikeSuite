@@ -5,8 +5,8 @@ Database Session Management — Async + Sync SQLAlchemy Engines & Sessions.
 - Sync engine / session: for Celery workers and background tasks (sync).
 
 Both share the same DATABASE_URL but require different drivers:
-- async: asyncpg (postgresql+asyncpg://...)
-- sync : psycopg2 (postgresql://... or postgresql+psycopg2://...)
+- async: asyncpg   (postgresql+asyncpg://...)
+- sync : psycopg2  (postgresql+psycopg2://...)
 """
 
 from collections.abc import AsyncGenerator, Generator
@@ -43,13 +43,7 @@ async_session_factory = async_sessionmaker(
 # Sync Engine & Session (Celery / background workers)
 # ============================================================
 def _to_sync_url(url: str) -> str:
-    """
-    Convert an async SQLAlchemy URL to a sync one.
-
-    - postgresql+asyncpg://...  -> postgresql+psycopg2://...
-    - sqlite+aiosqlite:///...   -> sqlite:///...
-    - Anything else: return as-is (assumed already sync).
-    """
+    """Convert an async SQLAlchemy URL to a sync one."""
     if "+asyncpg" in url:
         return url.replace("+asyncpg", "+psycopg2")
     if "+aiosqlite" in url:
@@ -106,10 +100,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:  # noqa: UP043
 # Celery / Background Dependency: get_sync_db
 # ============================================================
 def get_sync_db() -> Generator[Session, None, None]:
-    """
-    Yield a sync SQLAlchemy session for Celery workers and
-    background tasks. Commits on success, rolls back on exception.
-    """
+    """Yield a sync SQLAlchemy session for Celery workers."""
     db = SessionLocal()
     try:
         yield db
@@ -125,12 +116,7 @@ def get_sync_db() -> Generator[Session, None, None]:
 # Database Initialization (dev only)
 # ============================================================
 async def init_db() -> None:
-    """
-    Database initialization — DEPRECATED.
-
-    In production, use Alembic migrations: `alembic upgrade head`
-    This function only creates tables in development mode when explicitly needed.
-    """
+    """Database initialization — DEPRECATED. Use Alembic in production."""
     if settings.DEBUG:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
