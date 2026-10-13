@@ -102,3 +102,104 @@ for h in r.hosts:
 # Comprehensive
 r = w.pentest_scan("10.0.0.1")
 print(r.raw_xml)
+
+
+
+---
+
+# 📊 جدول تغطية كل features Nmap
+
+| Feature | Wrapper Method | API ScanType | ✅ |
+| :--- | :--- | :--- | :---: |
+| Host Discovery | `host_discovery` | `host_discovery` | ✅ |
+| Ping Sweep | `ping_sweep` | `ping_sweep` | ✅ |
+| ARP Scan | `arp_scan` | `arp_scan` | ✅ |
+| TCP SYN | `scan_tcp_syn` | `tcp_syn` | ✅ |
+| TCP Connect | `scan_tcp_connect` | `tcp_connect` | ✅ |
+| TCP ACK | `scan_tcp_ack` | `tcp_ack` | ✅ |
+| TCP FIN | `scan_tcp_fin` | `tcp_fin` | ✅ |
+| TCP NULL | `scan_tcp_null` | `tcp_null` | ✅ |
+| TCP Xmas | `scan_tcp_xmas` | `tcp_xmas` | ✅ |
+| UDP | `scan_udp` | `udp` | ✅ |
+| SCTP INIT | `scan_sctp_init` | `sctp_init` | ✅ |
+| SCTP Cookie | `scan_sctp_cookie` | — | ✅ |
+| IP Protocol | `scan_ip_protocol` | `ip_protocol` | ✅ |
+| Idle | `scan_idle` | `idle` | ✅ |
+| All Ports | `scan_all_ports` | `full` | ✅ |
+| Top Ports | `scan_top_ports` | — | ✅ |
+| Fast Scan | `scan_fast` | `quick` | ✅ |
+| Specific Ports | `scan_specific_ports` | (via ports param) | ✅ |
+| Service Detection | `service_detection` | `service` | ✅ |
+| OS Detection | `os_detection` | `os` | ✅ |
+| NSE Default | `script_default` | — | ✅ |
+| NSE Vuln | `script_vuln` | `script_vuln` | ✅ |
+| NSE Auth | `script_auth` | `script_auth` | ✅ |
+| NSE Brute | `script_brute` | `script_brute` | ✅ |
+| NSE Discovery | `script_discovery` | `script_discovery` | ✅ |
+| NSE Exploit | `script_exploit` | `script_exploit` | ✅ |
+| NSE Vulners | `script_vulners` | — | ✅ |
+| HTTP Enum | `script_http_enum` | — | ✅ |
+| SMB Enum | `script_smb_enum` | — | ✅ |
+| SSH Enum | `script_ssh_enum` | — | ✅ |
+| SSL Scan | `script_ssl_scan` | — | ✅ |
+| DNS Enum | `script_dns_enum` | — | ✅ |
+| Fragment | `fragment_packets` | — | ✅ |
+| Decoy | `decoy_scan` | — | ✅ |
+| Spoof Source | `spoof_source` | — | ✅ |
+| Spoof MAC | `spoof_mac` | — | ✅ |
+| Randomize | `randomize_hosts` | — | ✅ |
+| Bad Checksum | `bad_checksum` | — | ✅ |
+| Data Length | `data_length` | — | ✅ |
+| Source Port | `source_port` | — | ✅ |
+| Timing | `timed_scan` | — | ✅ |
+| Traceroute | `traceroute` | `traceroute` | ✅ |
+| CIDR | `scan_cidr` | — | ✅ |
+| Range | `scan_range` | — | ✅ |
+| From File | `scan_from_file` | — | ✅ |
+| Exclude | `scan_exclude` | — | ✅ |
+| Aggressive | `aggressive_scan` | `aggressive` | ✅ |
+| Intense | `intense_scan` | `intense` | ✅ |
+| Comprehensive | `comprehensive_scan` | `comprehensive` | ✅ |
+| Stealth | `stealth_scan` | `stealth` | ✅ |
+| Pentest | `pentest_scan` | `pentest` | ✅ |
+| Ndiff | `ndiff` | — | ✅ |
+| Nping | `nping` | — | ✅ |
+
+**إجمالي: 51 feature** — كلهم مغطّيين.
+
+---
+
+# ✅ قائمة التحقق النهائية
+
+## الملفات (11):
+- [ ] 1. `tools/wrappers/nmap_wrapper.py`
+- [ ] 2. `tools/__init__.py`
+- [ ] 3. `tools/wrappers/__init__.py`
+- [ ] 4. `backend/app/schemas/scan.py`
+- [ ] 5. `backend/app/tasks/scan_tasks.py`
+- [ ] 6. `backend/app/api/v1/endpoints/scanning.py`
+- [ ] 7. `backend/app/api/v1/router.py` (تعديل)
+- [ ] 8. `backend/tests/unit/test_nmap_wrapper.py`
+- [ ] 9. `backend/tests/integration/test_api_scanning.py`
+- [ ] 10. `docs/nmap_integration.md`
+- [ ] 11. `tools/wrappers/NMAP_README.md`
+
+## تحقق على GitHub:
+- [ ] شجرة الملفات فيها `tools/wrappers/`
+- [ ] شجرة الملفات فيها `docs/`
+- [ ] صفحة Commits فيها **11 commits**
+- [ ] `router.py` فيه `scanning` في imports
+- [ ] `router.py` فيه `api_v1_router.include_router(scanning.router, ...)`
+
+---
+
+# 🎯 بعد الرفع
+
+**قولي "خلصت"** وأنا:
+1. أساعدك تنزّل المشروع على جهازك
+2. تثبيت Nmap
+3. تشغيل السيرفر
+4. اختبار كل حاجة
+5. ربط Nmap بالـ AI agents
+
+**أنا معاك خطوة بخطوة.** 💪
