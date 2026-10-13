@@ -1,10 +1,14 @@
 """Celery tasks for Nmap scans."""
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 _wrapper: Optional[object] = None
 
 
 def get_wrapper():
+    """Lazily instantiate the NmapWrapper (singleton per worker)."""
     global _wrapper
     if _wrapper is None:
         from tools.wrappers.nmap_wrapper import NmapWrapper
@@ -13,6 +17,7 @@ def get_wrapper():
 
 
 def _dispatch_scan(w, target, scan_type, ports, custom_args, timing, scripts, script_args, exclude):
+    """Route a scan_type string to the correct NmapWrapper method."""
     dispatch = {
         "host_discovery": lambda: w.host_discovery(target),
         "ping_sweep": lambda: w.ping_sweep(target),
@@ -50,36 +55,98 @@ def _dispatch_scan(w, target, scan_type, ports, custom_args, timing, scripts, sc
 
 
 def _persist_results(scan_id, result):
-    """Placeholder - extend with your DB logic."""
-    pass
+    """
+    Persist scan results to the database.
+
+    If the DB session or repository is unavailable, log a warning
+    and return gracefully so the Celery task does not fail.
+    """
+    try:
+        from app.db.session import SessionLocal
+        from app.db.repositories.scan_repo import ScanRepository
+
+        db = SessionLocal()
+        try:
+            ScanRepository.complete(db, scan_id, result)
+            logger.info(f"[scan_tasks] Persisted scan {scan_id} to DB")
+        finally:
+            db.close()
+    except ImportError as e:
+        logger.warning(f"[scan_tasks] DB modules not available, skipping persist: {e}")
+    except Exception as e:
+        logger.error(f"[scan_tasks] DB persist failed for {scan_id}: {e}", exc_info=True)
 
 
+# ─── Celery task registration ────────────────────────────────
 try:
     from celery import shared_task
 
-    @shared_task(bind=True, max_retries=2)
-    def run_nmap_scan(self, scan_id, target, scan_type, ports=None, custom_args=None,
-                      timing=None, scripts=None, script_args=None, exclude=None):
+    @shared_task(bind=True, max_retries=2, default_retry_delay=30)
+    def run_nmap_scan(
+        self,
+        scan_id: str,
+        target: str,
+        scan_type: str,
+        ports: Optional[str] = None,
+        custom_args: Optional[str] = None,
+        timing: Optional[str] = None,
+        scripts: Optional[list] = None,
+        script_args: Optional[dict] = None,
+        exclude: Optional[str] = None,
+    ):
+        """Async Celery task for running an Nmap scan and saving results."""
         w = get_wrapper()
         ports = ports or "1-1000"
+
         try:
-            result = _dispatch_scan(w, target, scan_type, ports, custom_args,
-                                    timing, scripts, script_args, exclude)
+            result = _dispatch_scan(
+                w, target, scan_type, ports,
+                custom_args, timing, scripts, script_args, exclude,
+            )
             _persist_results(scan_id, result)
-            return {"scan_id": scan_id, "success": result.success,
-                    "hosts_count": len(result.hosts), "elapsed": result.elapsed,
-                    "error": result.error}
+
+            return {
+                "scan_id": scan_id,
+                "success": result.success,
+                "hosts_count": len(result.hosts),
+                "elapsed": result.elapsed,
+                "error": result.error,
+            }
+        except ValueError as e:
+            logger.error(f"[scan_tasks] Invalid scan_type for {scan_id}: {e}")
+            raise
         except Exception as e:
-            self.retry(exc=e, countdown=30)
+            logger.error(f"[scan_tasks] Scan {scan_id} failed: {e}", exc_info=True)
+            raise self.retry(exc=e)
 
 except ImportError:
-    def run_nmap_scan(scan_id, target, scan_type, ports=None, custom_args=None,
-                      timing=None, scripts=None, script_args=None, exclude=None):
+    # Celery not installed — provide a synchronous fallback.
+    # Useful for tests and local dev without a broker.
+    def run_nmap_scan(
+        scan_id: str,
+        target: str,
+        scan_type: str,
+        ports: Optional[str] = None,
+        custom_args: Optional[str] = None,
+        timing: Optional[str] = None,
+        scripts: Optional[list] = None,
+        script_args: Optional[dict] = None,
+        exclude: Optional[str] = None,
+    ):
+        """Synchronous fallback when Celery is not installed."""
         w = get_wrapper()
         ports = ports or "1-1000"
-        result = _dispatch_scan(w, target, scan_type, ports, custom_args,
-                                timing, scripts, script_args, exclude)
+
+        result = _dispatch_scan(
+            w, target, scan_type, ports,
+            custom_args, timing, scripts, script_args, exclude,
+        )
         _persist_results(scan_id, result)
-        return {"scan_id": scan_id, "success": result.success,
-                "hosts_count": len(result.hosts), "elapsed": result.elapsed,
-                "error": result.error}
+
+        return {
+            "scan_id": scan_id,
+            "success": result.success,
+            "hosts_count": len(result.hosts),
+            "elapsed": result.elapsed,
+            "error": result.error,
+        }
